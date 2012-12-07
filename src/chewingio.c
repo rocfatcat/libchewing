@@ -141,6 +141,7 @@ static ChewingData * allocate_ChewingData()
 {
 	static const ChewingConfigData DEFAULT_CONFIG = {
 		.candPerPage = MAX_SELKEY,
+		.maxChiSymbolLen = MAX_CHI_SYMBOL_LEN,
 		.selKey = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' },
 	};
 
@@ -378,7 +379,7 @@ CHEWING_API int chewing_get_candPerPage( ChewingContext *ctx )
 
 CHEWING_API void chewing_set_maxChiSymbolLen( ChewingContext *ctx, int n )
 {
-	if ( 0 <= n && n <= MAX_PHONE_SEQ_LEN )
+	if ( MIN_CHI_SYMBOL_LEN <= n && n <= MAX_CHI_SYMBOL_LEN )
 		ctx->data->config.maxChiSymbolLen = n;
 }
 

@@ -55,7 +55,6 @@ void test_type_easy_symbol()
 
 	ChewingContext *ctx = chewing_new();
 
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 	chewing_set_easySymbolInput( ctx, 1 );
 
 	for ( int i = 0; i < ARRAY_SIZE( EASY_SYMBOL ); ++i ) {
@@ -74,8 +73,6 @@ void test_mode_change()
 	chewing_Init( NULL, NULL );
 
 	ChewingContext *ctx = chewing_new();
-
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 
 	type_keystoke_by_string( ctx, CHINESE.token );
 	ok_commit_buffer( ctx, CHINESE.expected );

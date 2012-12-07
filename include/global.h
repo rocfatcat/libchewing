@@ -58,6 +58,9 @@
 #define MIN_SELKEY 1
 #define MAX_SELKEY 10
 
+#define MIN_CHI_SYMBOL_LEN 1
+#define MAX_CHI_SYMBOL_LEN 49 // MAX_PHONE_SEQ_LEN - 1
+
 /**
  * @deprecated Use chewing_set_ series of functions to set parameters instead.
  */

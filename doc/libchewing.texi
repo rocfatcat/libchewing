@@ -525,9 +525,9 @@ This function checks if the candidates selection has finished.
 @section Candidates Behavior
 
 @deftypefun void chewing_set_candPerPage (ChewingContext *@var{ctx}, int @var{n})
-This function sets the candidates per page to @var{n}. If MIN_SELKEY @leq{}
-@var{n} @leq{} @code{MAX_SELKEY} is not true, the @var{n} will be ignored. The
-default candidates per page is @code{MAX_SELKEY}.
+This function sets the candidates per page to @var{n}. If @code{MIN_SELKEY}
+@leq{} @var{n} @leq{} @code{MAX_SELKEY} is not true, the @var{n} will be
+ignored. The default candidates per page is @code{MAX_SELKEY}.
 @end deftypefun
 
 @deftypefun int chewing_get_candPerPage (ChewingContext *@var{ctx})
@@ -730,15 +730,25 @@ The Chewing IM could be customized in some small details. These
 functions provide the configuration interfaces to the front-end.
 
 @deftypefun void chewing_set_maxChiSymbolLen (ChewingContext *@var{ctx}, int @var{n})
-This function sets the maximum number of the Chinese characters in the
-pre-edit buffer. If the pre-edit string is longer than this number
-then the leading part will be committed automatically.
+This function sets the maximum number of the Chinese characters in the pre-edit
+buffer. If @code{MIN_CHI_SYMBOL_LEN} @leq{} @var{n} @leq{}
+@code{MAX_CHI_SYMBOL_LEN} is not true, the @var{n} will be ignored. When the
+pre-edit string is longer than this number then the leading part will be
+committed automatically. The default pre-edit buffer length is
+@code{MAX_CHI_SYMBOL_LEN}.
 @end deftypefun
 
 @deftypefun int chewing_get_maxChiSymbolLen (ChewingContext *@var{ctx})
 This function returns the maximum number of the Chinese characters in
 the pre-edit buffer.
 @end deftypefun
+
+@deftypevr Marco int MAX_CHI_SYMBOL_LEN
+The maximum pre-edit buffer length. Its value is @code{49}.
+@end deftypevr
+@deftypevr Marco int MIN_CHI_SYMBOL_LEN
+The minimum pre-edit buffer length. Its value is @code{1}.
+@end deftypevr
 
 @c TODO: The @var{direction} argument should use a enum.
 @deftypefun void chewing_set_addPhraseDirection (ChewingContext *@var{ctx}, int @var{direction})

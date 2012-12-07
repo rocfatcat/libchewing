@@ -34,7 +34,6 @@ void test_libchewing_data_issue_1()
 	chewing_Init( NULL, NULL );
 
 	ctx = chewing_new();
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 	type_keystoke_by_string( ctx, DATA.token );
 	ok_preedit_buffer( ctx, DATA.expected );
 

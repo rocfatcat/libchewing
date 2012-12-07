@@ -32,8 +32,6 @@ void test_reset_shall_not_clean_static_data()
 
 	chewing_set_KBType( ctx, chewing_KBStr2Num( "KB_DEFAULT" ) );
 
-	chewing_set_maxChiSymbolLen( ctx, 16 );
-
 	chewing_Reset( ctx );
 
 	type_keystoke_by_string( ctx, TOKEN );

@@ -338,9 +338,6 @@ void test_type_symbol()
 
 	ChewingContext *ctx = chewing_new();
 
-	chewing_set_candPerPage( ctx, 10 );
-	chewing_set_maxChiSymbolLen( ctx, 16 );
-
 	for (int i = 0; i < ARRAY_SIZE(SYMBOL); ++i ) {
 		type_keystoke_by_string( ctx, SYMBOL[i].token );
 		ok_preedit_buffer( ctx, "" );
@@ -356,9 +353,6 @@ void test_symbol_cand_page()
 	chewing_Init( NULL, NULL );
 
 	ChewingContext *ctx = chewing_new();
-
-	chewing_set_candPerPage( ctx, 10 );
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 
 	chewing_handle_Default( ctx, '`' );
 	ok( chewing_cand_CurrentPage( ctx ) == 0, "current page shall be 0" );

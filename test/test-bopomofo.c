@@ -44,8 +44,6 @@ void test_select_candidate_no_phrase_choice_rearward()
 
 	ChewingContext *ctx = chewing_new();
 
-	chewing_set_maxChiSymbolLen( ctx, 16 );
-
 	type_keystoke_by_string( ctx, "u6g;4x96<L><L><L>" ); // ㄧˊㄕㄤˋㄌㄞˊ
 
 	// ㄧˊㄕㄤˋㄌㄞˊ
@@ -89,7 +87,6 @@ void test_select_candidate_phrase_choice_rearward()
 
 	ChewingContext *ctx = chewing_new();
 
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 	chewing_set_phraseChoiceRearward( ctx, 1 );
 
 	type_keystoke_by_string( ctx, "u6g;4x96" ); // ㄧˊㄕㄤˋㄌㄞˊ
@@ -201,7 +198,6 @@ void test_Del_word()
 	chewing_Init( NULL, NULL );
 
 	ctx = chewing_new();
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 
 	type_keystoke_by_string( ctx, "hk4u g4<L><L><DC><E>" );
 	ok_commit_buffer( ctx, "測試" );
@@ -266,7 +262,6 @@ void test_Backspace_word()
 	chewing_Init( NULL, NULL );
 
 	ctx = chewing_new();
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 
 	type_keystoke_by_string( ctx, "hk4u g4<L><B><E>" );
 	ok_commit_buffer( ctx, "測試" );
@@ -348,7 +343,6 @@ void test_ShiftLeft_add_userphrase()
 	chewing_Init( NULL, NULL );
 
 	ctx = chewing_new();
-	chewing_set_maxChiSymbolLen( ctx, 16 );
 
 	ok( has_userphrase( ctx, bopomofo, phrase ) == 0,
 		"`%s' shall not be in userphrase", phrase );

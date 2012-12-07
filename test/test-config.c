@@ -21,7 +21,8 @@
 static const int MIN_CAND_PER_PAGE = 1;
 static const int MAX_CAND_PER_PAGE = 10;
 static const int DEFAULT_CAND_PER_PAGE = 10;
-static const int MAX_CHI_SYMBOL_LEN = 50; // MAX_PHONE_SEQ_LEN + 1
+
+static const int DEFAULT_CHI_SYMBOL_LEN = MAX_CHI_SYMBOL_LEN;
 
 static const int DEFAULT_SELECT_KEY[] = {
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
@@ -49,8 +50,8 @@ void test_default_value()
 	ok( chewing_get_candPerPage( ctx ) == DEFAULT_CAND_PER_PAGE,
 		"candPerPage shall be default value" );
 
-	ok( chewing_get_maxChiSymbolLen( ctx ) == 0,
-		"maxChiSymbolLen shall be 0" );
+	ok( chewing_get_maxChiSymbolLen( ctx ) == DEFAULT_CHI_SYMBOL_LEN,
+		"maxChiSymbolLen shall be default" );
 
 	ok( chewing_get_addPhraseDirection( ctx ) == 0,
 		"addPhraseDirection shall be 0" );
@@ -122,23 +123,36 @@ void test_set_candPerPage()
 
 void test_set_maxChiSymbolLen()
 {
+	const int VALUE[] = {
+		MIN_CHI_SYMBOL_LEN,
+		MAX_CHI_SYMBOL_LEN,
+	};
+
+	const int INVALID_VALUE[] = {
+		MIN_CHI_SYMBOL_LEN - 1,
+		MAX_CHI_SYMBOL_LEN + 1,
+	};
+
 	ChewingContext *ctx;
+	int i;
+	int j;
 
 	chewing_Init( 0, 0 );
 
 	ctx = chewing_new();
 
-	chewing_set_maxChiSymbolLen( ctx, 16 );
-	ok( chewing_get_maxChiSymbolLen( ctx ) == 16,
-		"maxChiSymbolLen shall be 16" );
+	for ( i = 0; i < ARRAY_SIZE( VALUE ); ++i ) {
+		chewing_set_maxChiSymbolLen( ctx, VALUE[i] );
+		ok( chewing_get_maxChiSymbolLen( ctx ) == VALUE[i],
+			"maxChiSymbolLen shall be `%d'", VALUE[i] );
 
-	chewing_set_maxChiSymbolLen( ctx, -1 );
-	ok( chewing_get_maxChiSymbolLen( ctx ) == 16,
-		"maxChiSymbolLen shall not change" );
-
-	chewing_set_maxChiSymbolLen( ctx, MAX_CHI_SYMBOL_LEN + 1 );
-	ok( chewing_get_maxChiSymbolLen( ctx ) == 16,
-		"maxChiSymbolLen shall not change" );
+		for ( j = 0; j < ARRAY_SIZE( INVALID_VALUE ); ++j ) {
+			// mode shall not change when set mode has invalid value.
+			chewing_set_maxChiSymbolLen( ctx, INVALID_VALUE[j] );
+			ok( chewing_get_maxChiSymbolLen( ctx ) == VALUE[i],
+				"maxChiSymbolLen shall be `%d'", VALUE[i] );
+		}
+	}
 
 	// XXX: test if new maxChiSymbolLen works as expect
 
