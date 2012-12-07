@@ -504,21 +504,37 @@ int WriteChiSymbolToBuf( wch_t csBuf[], int csBufLen, ChewingData *pgdata )
 	return 0;
 }
 
+void RemovePreferElement( int i, ChewingData *pgdata )
+{
+	if ( --pgdata->nPrefer == i )
+		return;
+	pgdata->preferInterval[ i ] = pgdata->preferInterval[ pgdata->nPrefer ];
+}
+
+int ChewingKillPreferIntervalAcross( int cursor, ChewingData *pgdata )
+{
+	int i;
+	for ( i = 0; i < pgdata->nPrefer; i++ ) {
+		if ( pgdata->preferInterval[ i ].from < cursor &&
+			pgdata->preferInterval[ i ].to > cursor ) {
+			RemovePreferElement( i, pgdata );
+			i--;
+		}
+	}
+	return 0;
+}
+
 static int CountReleaseNum( ChewingData *pgdata )
 {
-	int remain, i;
+	int i;
 
-	/* reserve ZUIN_SIZE positions for Zuin */
-	remain = pgdata->config.maxChiSymbolLen - (pgdata->chiSymbolBufLen + ZUIN_SIZE);
-	if ( remain > 0 )
+	if ( pgdata->chiSymbolBufLen <= pgdata->config.maxChiSymbolLen )
 		return 0;
 
-	qsort(
-		pgdata->preferInterval, 
-		pgdata->nPrefer, 
-		sizeof( IntervalType ),
-		(CompFuncType) CompInterval ); 
-
+	/*
+	 * If the pre-edit buffer starts with non-Chinese character. Submit
+	 * all starting non-Chinese characters.
+	 */
 	if ( ! ChewingIsChiAt( 0, pgdata ) ) {
 		for ( i = 0; i < pgdata->chiSymbolCursor; ++i ) {
 			if ( ChewingIsChiAt( i, pgdata ) ) {
@@ -527,6 +543,19 @@ static int CountReleaseNum( ChewingData *pgdata )
 		}
 		return i;
 	}
+
+	/*
+	 * Remove the last word entering from perfer interval so it will not be
+	 * commited. Since this function is called after the last word was
+	 * inserted into buffer, user cannot select the last word here. If we
+	 * just commit the last word, user has no change to select it at all.
+	 */
+	ChewingKillPreferIntervalAcross( pgdata->chiSymbolBufLen - 1, pgdata );
+	qsort(
+		pgdata->preferInterval,
+		pgdata->nPrefer,
+		sizeof( IntervalType ),
+		(CompFuncType) CompInterval );
 	
 	i = FindIntervalFrom( 0, pgdata->preferInterval, pgdata->nPrefer );
 	if ( i >= 0 ) {
