@@ -172,88 +172,7 @@ void read_phone_cin(const char *filename)
 	}
 	fclose(phone_cin);
 
-	qsort(word_data, num_word_data, sizeof(word_data[0]), compare_word_by_phone);
-
 	return;
-}
-
-void write_word_data()
-{
-	FILE *chewing_file;
-	FILE *char_file;
-#ifdef USE_BINARY_DATA
-	FILE *index_begin_file;
-	FILE *index_phone_file;
-	unsigned char size;
-#else
-	FILE *index_file;
-#endif
-	int i;
-	uint16_t previous_phone;
-	int phone_num;
-	int pos;
-
-
-	chewing_file = fopen(CHEWING_DEFINITION_FILE, "w");
-#ifdef USE_BINARY_DATA
-	index_begin_file = fopen(CHAR_INDEX_BEGIN_FILE, "wb");
-	index_phone_file = fopen(CHAR_INDEX_PHONE_FILE, "wb");
-	char_file = fopen(CHAR_FILE, "wb");
-
-	if (!(chewing_file && index_begin_file && index_phone_file && char_file)) {
-		fprintf(stderr, "Cannot open output file.\n");
-		exit(-1);
-	}
-#else
-	index_file = fopen(CHAR_INDEX_FILE, "w");
-	char_file = fopen(CHAR_FILE, "w");
-	if (!(chewing_file && index_file && char_file)) {
-		fprintf(stderr, "Cannot open output file.\n");
-		exit(-1);
-	}
-#endif
-
-	previous_phone = 0;
-	phone_num = 0;
-	for (i = 0; i < num_word_data; ++i) {
-		if (word_data[i].phone != previous_phone) {
-			previous_phone = word_data[i].phone;
-			pos = ftell(char_file);
-#ifdef USE_BINARY_DATA
-			fwrite(&pos, sizeof(pos), 1, index_begin_file);
-			fwrite(&previous_phone, sizeof(previous_phone), 1, index_phone_file);
-#else
-			fprintf(index_file, "%hu %d\n", previous_phone, pos);
-#endif
-			phone_num++;
-		}
-
-#ifdef USE_BINARY_DATA
-		size = strlen(word_data[ i ].word);
-		fwrite(&size, sizeof(size), 1, char_file);
-		fwrite(word_data[i].word, size, 1, char_file);
-#else
-		fprintf(char_file, "%hu %s\t", word_data[i].phone, word_data[i].word);
-#endif
-	}
-	pos = ftell(char_file);
-#ifdef USE_BINARY_DATA
-	fwrite(&pos, sizeof(pos), 1, index_begin_file);
-	previous_phone = 0;
-	fwrite(&previous_phone, sizeof(previous_phone), 1, index_phone_file);
-#else
-	fprintf(index_file, "0 %d\n", pos);
-#endif
-	fprintf(chewing_file, "#define PHONE_NUM (%d)\n", phone_num);
-
-	fclose(char_file);
-#ifdef USE_BINARY_DATA
-	fclose(index_phone_file);
-	fclose(index_begin_file);
-#else
-	fclose(index_file);
-#endif
-	fclose(chewing_file);
 }
 
 void sort_word_for_dictionary()
@@ -337,6 +256,11 @@ void store_phrase(const char *line)
 		exit(-1);
 	}
 
+	if (phrase_len == 1) {
+		fprintf(stderr, "Word `%s' shall be in phone.cin, not tsi.src\n", phrase_data[num_phrase_data].phrase);
+		exit(-1);
+	}
+
 	/* check each word in phrase */
 	for (i = 0; i < phrase_len; ++i) {
 		ueStrNCpy(word.word, ueStrSeek(phrase_data[num_phrase_data].phrase, i), 1, 1);
@@ -381,6 +305,12 @@ int compare_phrase(const void *x, const void *y)
 	}
 
 	if (a->freq == b->freq) {
+		if (a->phone[1] == 0) {
+			if (a < b)
+				return -1;
+			if (a > b)
+				return 1;
+		}
 		fprintf(stderr, "Phrase `%s' and `%s' have the same phone and frequency (%d).\n", a->phrase, b->phrase, a->freq);
 		/* FIXME: shall exit(-1) when tsi.src is fixed */
 		//exit(-1);
@@ -404,7 +334,18 @@ void read_tsi_src(const char *filename)
 		store_phrase(buf);
 	}
 
-	qsort(phrase_data, num_phrase_data, sizeof(phrase_data[0]), compare_phrase);
+}
+
+void merge_word_to_phrase()
+{
+	int i;
+
+	for (i = 0; i < num_word_data; ++i, ++num_phrase_data) {
+		strncpy(phrase_data[num_phrase_data].phrase, word_data[i].word, sizeof(phrase_data[0].phrase));
+		phrase_data[num_phrase_data].phone[0] = word_data[i].phone;
+		phrase_data[num_phrase_data].phone[1] = 0;
+		phrase_data[num_phrase_data].freq = 0;
+	}
 }
 
 int compare_phone_in_phrase(int x, int y)
@@ -497,11 +438,14 @@ int main(int argc, char *argv[])
 	}
 
 	read_phone_cin(argv[1]);
-	write_word_data();
+	merge_word_to_phrase();
 
 	sort_word_for_dictionary();
-
 	read_tsi_src(argv[2]);
+
+	qsort(phrase_data, num_phrase_data, sizeof(phrase_data[0]), compare_phrase);
+
 	write_phrase_data();
+
 	return 0;
 }
