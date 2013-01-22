@@ -145,20 +145,6 @@ typedef struct {
 	plat_mmap tree_mmap;
 #endif
 
-	uint16_t *arrPhone;
-	int *char_begin;
-	size_t phone_num;
-	void *char_;
-	void *char_cur_pos;
-	int char_end_pos;
-#ifdef USE_BINARY_DATA
-	plat_mmap char_mmap;
-	plat_mmap char_begin_mmap;
-	plat_mmap char_phone_mmap;
-#else
-	FILE *charfile;
-#endif
-
 	int *dict_begin;
 	void *dict_cur_pos;
 	int dict_end_pos;
@@ -277,8 +263,8 @@ struct _ChewingContext {
  */
 
 typedef struct {
-	char phrase[ MAX_PHRASE_LEN * MAX_UTF8_SIZE + 1 ];
 	int freq;
+	char phrase[ MAX_PHRASE_LEN * MAX_UTF8_SIZE + 1 ];
 } Phrase;
 
 #endif
