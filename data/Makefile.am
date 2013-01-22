@@ -1,14 +1,5 @@
 tooldir = $(top_builddir)/src/tools
-if ENABLE_BINARY_DATA
-chindexs = \
-	ch_index_begin.dat \
-	ch_index_phone.dat \
-	$(NULL)
-else
-chindexs = ch_index.dat
-endif
 datas = \
-	us_freq.dat \
 	dict.dat \
 	ph_index.dat \
 	fonetree.dat \
