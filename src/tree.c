@@ -611,19 +611,6 @@ static void Discard2( TreeDataType *ptd )
 	ptd->nInterval = nInterval2;
 }
 
-static void LoadChar( ChewingData *pgdata, char *buf, int buf_len, uint16_t phoneSeq[], int nPhoneSeq )
-{
-	int i;
-	Word word;
-
-	memset(buf, 0, buf_len);
-	for ( i = 0; i < nPhoneSeq; i++ ) {
-		GetCharFirst( pgdata, &word, phoneSeq[ i ] );
-		strncat(buf, word.word, buf_len - strlen(buf) - 1);
-	}
-	buf[ buf_len - 1 ] = '\0';
-}
-
 /* kpchen said, record is the index array of interval */
 static void OutputRecordStr(
 		ChewingData *pgdata,
@@ -637,7 +624,6 @@ static void OutputRecordStr(
 	PhraseIntervalType inter;
 	int i;
 
-	LoadChar( pgdata, out_buf, out_buf_len, phoneSeq, nPhoneSeq );
 	for ( i = 0; i < nRecord; i++ ) {
 		inter = ptd->interval[ record[ i ] ];
 		ueStrNCpy(
