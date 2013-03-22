@@ -75,7 +75,6 @@ typedef struct {
 } TreeType;
 
 typedef struct {
-	char chiBuf[ MAX_PHONE_SEQ_LEN * MAX_UTF8_SIZE + 1 ];
 	IntervalType dispInterval[ MAX_INTERVAL ];
 	int nDispInterval;
 	int nNumCut;
@@ -218,7 +217,6 @@ typedef struct tag_ChewingData {
 	ZuinData zuinData;
 	ChewingConfigData config;
     /** @brief current input buffer, content==0 means Chinese code */
-	wch_t chiSymbolBuf[ MAX_PHONE_SEQ_LEN ];
 	PreeditBuf preeditBuf[ MAX_PHONE_SEQ_LEN ];
 	int chiSymbolCursor;
 	int chiSymbolBufLen;
