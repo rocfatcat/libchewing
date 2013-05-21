@@ -288,7 +288,6 @@ CHEWING_API int chewing_Reset( ChewingContext *ctx )
 
 	pgdata->chiSymbolCursor = 0;
 	pgdata->chiSymbolBufLen = 0;
-	pgdata->nPhoneSeq = 0;
 	memset( pgdata->bUserArrCnnct, 0, sizeof( int ) * ( MAX_PHONE_SEQ_LEN + 1 ) );
 	memset( pgdata->bUserArrBrkpt, 0, sizeof( int ) * ( MAX_PHONE_SEQ_LEN + 1 ) );
 	pgdata->bChiSym = CHINESE_MODE;
@@ -1309,19 +1308,12 @@ CHEWING_API int chewing_handle_CtrlNum( ChewingContext *ctx, int key )
 
 	cursor = PhoneSeqCursor( pgdata );
 	if ( ! pgdata->config.bAddPhraseForward ) {
-		if ( 
-			newPhraseLen >= 1 && 
-			cursor + newPhraseLen - 1 <= pgdata->nPhoneSeq ) {
-			if ( NoSymbolBetween( 
-				pgdata,
+		if ( newPhraseLen >= 1 && cursor + newPhraseLen - 1 <= pgdata->chiSymbolBufLen ) {
+			if ( NoSymbolBetween(pgdata,
 				cursor,
 				cursor + newPhraseLen ) ) {
 				/* Manually add phrase to the user phrase database. */
-				memcpy( addPhoneSeq,
-				        &pgdata->phoneSeq[ cursor ],
-				        sizeof( uint16_t ) * newPhraseLen );
-				addPhoneSeq[ newPhraseLen ] = 0;
-
+				copyPhoneFromPreeditBuf( pgdata, cursor, newPhraseLen, addPhoneSeq, ARRAY_SIZE( addPhoneSeq ) );
 				copyStringFromPreeditBuf( pgdata, cursor, newPhraseLen, addWordSeq, sizeof( addWordSeq ) );
 
 				phraseState = UserUpdatePhrase( pgdata, addPhoneSeq, addWordSeq );
@@ -1338,18 +1330,13 @@ CHEWING_API int chewing_handle_CtrlNum( ChewingContext *ctx, int key )
 		}
 	}
 	else {
-		if ( 
-			newPhraseLen >= 1 && 
-			cursor - newPhraseLen >= 0 ) {
+		if ( newPhraseLen >= 1 && cursor - newPhraseLen >= 0 ) {
 			if ( NoSymbolBetween( pgdata,
 				cursor - newPhraseLen,
 				cursor ) ) {
 				/* Manually add phrase to the user phrase database. */
-				memcpy( addPhoneSeq,
-				        &pgdata->phoneSeq[ cursor - newPhraseLen ],
-				        sizeof( uint16_t ) * newPhraseLen );
-				addPhoneSeq[ newPhraseLen ] = 0;
 
+				copyPhoneFromPreeditBuf( pgdata, cursor - newPhraseLen, newPhraseLen, addPhoneSeq, ARRAY_SIZE( addPhoneSeq ) );
 				copyStringFromPreeditBuf( pgdata, cursor - newPhraseLen, newPhraseLen, addWordSeq, sizeof( addWordSeq ) );
 
 				phraseState = UserUpdatePhrase( pgdata, addPhoneSeq, addWordSeq );
@@ -1459,13 +1446,30 @@ CHEWING_API int chewing_handle_Numlock( ChewingContext *ctx, int key )
 CHEWING_API unsigned short *chewing_get_phoneSeq( ChewingContext *ctx )
 {
 	uint16_t *seq;
-	seq = ALC( uint16_t, ctx->data->nPhoneSeq );
-	if ( seq )
-		memcpy( seq, ctx->data->phoneSeq, sizeof(uint16_t)*ctx->data->nPhoneSeq );
+	int i;
+	int pos;
+
+	seq = ALC( uint16_t, ctx->data->chiSymbolBufLen );
+	if ( !seq )
+		return NULL;
+
+	for ( i = 0, pos = 0; i < ctx->data->chiSymbolBufLen; ++i ) {
+		if ( ctx->data->preeditBuf[ i ].category == CHEWING_CHINESE ) {
+			seq[ pos ] = ctx->data->preeditBuf[ i ].phoneSeq;
+			++pos;
+		}
+	}
+
 	return seq;
 }
 
 CHEWING_API int chewing_get_phoneSeqLen( ChewingContext *ctx )
 {
-	return ctx->data->nPhoneSeq;
+	int i;
+	int ret;
+
+	for ( i = 0, ret = 0; i < ctx->data->chiSymbolBufLen; ++i )
+		if ( ctx->data->preeditBuf[ i ].category == CHEWING_CHINESE )
+			++ret;
+	return ret;
 }

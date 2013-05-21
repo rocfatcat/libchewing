@@ -57,9 +57,12 @@ void TerminateSymbolTable( ChewingData *pgdata );
 
 int InitEasySymbolInput( ChewingData *pgdata, const char *prefix );
 void TerminateEasySymbolTable( ChewingData *pgdata );
-void copyStringFromPreeditBuf(
+int copyStringFromPreeditBuf(
 	ChewingData *pgdata, int pos, int len,
 	char *output, int output_len );
+int copyPhoneFromPreeditBuf(
+	ChewingData *pgdata, uint16_t pos, int len,
+	uint16_t *output, int output_len );
 
 #endif
 

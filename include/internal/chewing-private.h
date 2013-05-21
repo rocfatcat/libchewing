@@ -207,6 +207,8 @@ typedef enum tag_Category {
 
 typedef struct tag_PreeditBuf {
 	Category category;
+	uint16_t phoneSeq;
+	uint16_t phoneSeqAlt;
 	char char_[ MAX_UTF8_SIZE + 1 ];
 } PreeditBuf;
 
@@ -225,9 +227,6 @@ typedef struct tag_ChewingData {
 	wch_t showMsg[ MAX_PHONE_SEQ_LEN ];
 	int showMsgLen;
 
-	uint16_t phoneSeq[ MAX_PHONE_SEQ_LEN ];
-	uint16_t phoneSeqAlt[ MAX_PHONE_SEQ_LEN ];
-	int nPhoneSeq;
 	char selectStr[ MAX_PHONE_SEQ_LEN ][ MAX_PHONE_SEQ_LEN * MAX_UTF8_SIZE + 1 ];
 	IntervalType selectInterval[ MAX_PHONE_SEQ_LEN ];
 	int nSelect;

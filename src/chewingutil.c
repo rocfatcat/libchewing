@@ -541,9 +541,6 @@ static void KillFromLeft( ChewingData *pgdata, int nKill )
 
 void CleanAllBuf( ChewingData *pgdata )
 {
-	/* 1 */
-	pgdata->nPhoneSeq = 0 ;
-	memset( pgdata->phoneSeq, 0, sizeof( pgdata->phoneSeq ) );
 	/* 2 */
 	pgdata->chiSymbolBufLen = 0;
 	memset( pgdata->preeditBuf, 0, sizeof( pgdata->preeditBuf ) );
@@ -580,8 +577,7 @@ int ReleaseChiSymbolBuf( ChewingData *pgdata, ChewingOutput *pgo )
 		WriteChiSymbolToBuf( pgo->commitStr, throwEnd, pgdata );
 
 		/* Add to userphrase */
-		memcpy( bufPhoneSeq, pgdata->phoneSeq, sizeof( uint16_t ) * throwEnd );
-		bufPhoneSeq[ throwEnd ] = (uint16_t) 0;
+		copyPhoneFromPreeditBuf( pgdata, 0, throwEnd, bufPhoneSeq, ARRAY_SIZE( bufPhoneSeq ) );
 		copyStringFromPreeditBuf( pgdata, 0, throwEnd, bufWordSeq, sizeof ( bufWordSeq ) );
 		UserUpdatePhrase( pgdata, bufPhoneSeq, bufWordSeq );
 
@@ -641,9 +637,7 @@ void AutoLearnPhrase( ChewingData *pgdata )
 		from = pgdata->preferInterval[ i ].from;
 		len = pgdata->preferInterval[i].to - from;
 		if ( len == 1 && ! ChewingIsBreakPoint( from, pgdata ) ) {
-			memcpy( bufPhoneSeq + prev_pos, &pgdata->phoneSeq[ from ], sizeof( uint16_t ) * len );
-			bufPhoneSeq[ prev_pos + len ] = (uint16_t) 0;
-
+			copyPhoneFromPreeditBuf( pgdata, from, len, bufPhoneSeq + prev_pos, ARRAY_SIZE(bufPhoneSeq) - prev_pos );
 			bufWordLen = strlen( bufWordSeq );
 			copyStringFromPreeditBuf( pgdata, from, len,
 				bufWordSeq + bufWordLen, sizeof( bufWordSeq ) - bufWordLen );
@@ -656,8 +650,7 @@ void AutoLearnPhrase( ChewingData *pgdata )
 				prev_pos = 0;
 				pending = 0;
 			}
-			memcpy( bufPhoneSeq, &pgdata->phoneSeq[ from ], sizeof( uint16_t ) * len );
-			bufPhoneSeq[ len ] = (uint16_t) 0;
+			copyPhoneFromPreeditBuf( pgdata, from, len, bufPhoneSeq + prev_pos, ARRAY_SIZE(bufPhoneSeq) - prev_pos );
 			copyStringFromPreeditBuf( pgdata, from, len, bufWordSeq, sizeof( bufWordSeq ) );
 			UserUpdatePhrase( pgdata, bufPhoneSeq, bufWordSeq );
 		}
@@ -683,28 +676,15 @@ int AddChi( uint16_t phone, uint16_t phoneAlt, ChewingData *pgdata )
 	}
 
 	/* shift the Brkpt */
-	assert( pgdata->nPhoneSeq >= cursor );
+	assert( pgdata->chiSymbolBufLen >= cursor );
 	memmove( 
 		&( pgdata->bUserArrBrkpt[ cursor + 2 ] ),
 		&( pgdata->bUserArrBrkpt[ cursor + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursor ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursor ) );
 	memmove(
 		&( pgdata->bUserArrCnnct[ cursor + 2 ] ),
 		&( pgdata->bUserArrCnnct[ cursor + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursor ) );
-
-	/* add to phoneSeq */
-	memmove(
-		&( pgdata->phoneSeq[ cursor + 1 ] ),
-		&( pgdata->phoneSeq[ cursor ] ) ,
-		sizeof( uint16_t ) * ( pgdata->nPhoneSeq - cursor ) );
-	pgdata->phoneSeq[ cursor ] = phone;
-	memmove(
-		&( pgdata->phoneSeqAlt[ cursor + 1 ] ),
-		&( pgdata->phoneSeqAlt[ cursor ] ) ,
-		sizeof( uint16_t ) * ( pgdata->nPhoneSeq - cursor ) );
-	pgdata->phoneSeqAlt[ cursor ] = phoneAlt;
-	pgdata->nPhoneSeq ++;
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursor ) );
 
 	/* add to chiSymbolBuf */
 	assert( pgdata->chiSymbolBufLen >= pgdata->chiSymbolCursor );
@@ -714,6 +694,8 @@ int AddChi( uint16_t phone, uint16_t phoneAlt, ChewingData *pgdata )
 		sizeof( pgdata->preeditBuf[0] ) * ( pgdata->chiSymbolBufLen - pgdata->chiSymbolCursor ) );
 	/* "0" means Chinese word */
 	pgdata->preeditBuf[ pgdata->chiSymbolCursor ].category = CHEWING_CHINESE;
+	pgdata->preeditBuf[ pgdata->chiSymbolCursor ].phoneSeq = phone;
+	pgdata->preeditBuf[ pgdata->chiSymbolCursor ].phoneSeqAlt = phoneAlt;
 	pgdata->chiSymbolBufLen++;
 	pgdata->chiSymbolCursor++;
 
@@ -790,7 +772,7 @@ int CallPhrasing( ChewingData *pgdata )
 	}
 
 	/* kill select interval */
-	for ( i = 0; i < pgdata->nPhoneSeq; i++ ) {
+	for ( i = 0; i < pgdata->chiSymbolBufLen; i++ ) {
 		if ( pgdata->bArrBrkpt[ i ] ) {
 			ChewingKillSelectIntervalAcross( i, pgdata );
 		}
@@ -847,12 +829,12 @@ static void MakePreferInterval( ChewingData *pgdata )
 		}
 	}
 	set_no = i + 1;
-	for ( i = 0; i < pgdata->nPhoneSeq; i++ )
+	for ( i = 0; i < pgdata->chiSymbolBufLen; i++ )
 		if ( belong_set[i] == 0 ) 
 			belong_set[ i ] = set_no++;
 
 	/* for each connect point */
-	for ( i = 1; i < pgdata->nPhoneSeq; i++ ) {
+	for ( i = 1; i < pgdata->chiSymbolBufLen; i++ ) {
 		if ( pgdata->bUserArrCnnct[ i ] ) {
 			Union( belong_set[ i - 1 ], belong_set[ i ], parent );
 		}
@@ -861,8 +843,8 @@ static void MakePreferInterval( ChewingData *pgdata )
 	/* generate new intervals */
 	pgdata->nPrefer = 0;
 	i = 0;
-	while ( i < pgdata->nPhoneSeq ) {
-		for ( j = i + 1; j < pgdata->nPhoneSeq; j++ )
+	while ( i < pgdata->chiSymbolBufLen ) {
+		for ( j = i + 1; j < pgdata->chiSymbolBufLen; j++ )
 			if ( ! SameSet( belong_set[ i ], belong_set[ j ], parent ) )
 				break;
 
@@ -1019,8 +1001,7 @@ int CountSymbols( ChewingData *pgdata, int to )
 
 int PhoneSeqCursor( ChewingData *pgdata )
 {
-	int cursor = pgdata->chiSymbolCursor - CountSymbols( pgdata, pgdata->chiSymbolCursor );
-	return cursor > 0 ? cursor : 0;
+	return pgdata->chiSymbolCursor;
 }
 
 int ChewingIsChiAt( int chiSymbolCursor, ChewingData *pgdata )
@@ -1064,15 +1045,14 @@ static int KillCharInSelectIntervalAndBrkpt( ChewingData *pgdata, int cursorToKi
 			pgdata->selectInterval[ i ].to--; 
 		} 
 	}
-	assert ( pgdata->nPhoneSeq >= cursorToKill );
 	memmove( 
 		&( pgdata->bUserArrBrkpt[ cursorToKill ] ),
 		&( pgdata->bUserArrBrkpt[ cursorToKill + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursorToKill ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursorToKill ) );
 	memmove( 
 		&( pgdata->bUserArrCnnct[ cursorToKill ] ),
 		&( pgdata->bUserArrCnnct[ cursorToKill + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursorToKill ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursorToKill ) );
 
 	return 0;
 }
@@ -1089,12 +1069,6 @@ int ChewingKillChar(
 	pgdata->chiSymbolCursor = tmp;
 	if ( ChewingIsChiAt( chiSymbolCursorToKill, pgdata ) ) {
 		KillCharInSelectIntervalAndBrkpt(pgdata, cursorToKill);
-		assert( pgdata->nPhoneSeq - cursorToKill - 1 >= 0 );
-		memmove(
-			&( pgdata->phoneSeq[ cursorToKill ] ), 
-			&(pgdata->phoneSeq[ cursorToKill + 1 ] ),
-			(pgdata->nPhoneSeq - cursorToKill - 1) * sizeof( uint16_t ) );
-		pgdata->nPhoneSeq--;
 	}
 	pgdata->symbolKeyBuf[ chiSymbolCursorToKill ] = 0;
 	assert( pgdata->chiSymbolBufLen - chiSymbolCursorToKill );
@@ -1527,7 +1501,7 @@ void TerminateEasySymbolTable( ChewingData *pgdata )
 	}
 }
 
-void copyStringFromPreeditBuf(
+int copyStringFromPreeditBuf(
 	ChewingData *pgdata, int pos, int len,
 	char *output, int output_len )
 {
@@ -1542,10 +1516,29 @@ void copyStringFromPreeditBuf(
 	for ( i = pos; i < pos + len; ++i ) {
 		x = strlen( pgdata->preeditBuf[ i ].char_ );
 		if ( x >= output_len ) // overflow
-			return;
+			return -1;
 		memcpy( output, pgdata->preeditBuf[ i ].char_, x );
 		output += x;
 		output_len -= x;
 	}
 	output[0] = 0;
+	return 0;
+}
+
+int copyPhoneFromPreeditBuf(
+	ChewingData *pgdata, uint16_t pos, int len,
+	uint16_t *output, int output_len )
+{
+	int i;
+
+	assert( pgdata );
+	assert( 0 <= pos && pos + len < ARRAY_SIZE( pgdata->preeditBuf ) );
+	assert( output );
+	assert( len < output_len );
+
+	for ( i = 0; i < len; ++i ) {
+		output[i] = pgdata->preeditBuf[ i + pos ].phoneSeq;
+	}
+	output[ len ] = 0;
+	return 0;
 }
