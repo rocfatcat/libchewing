@@ -368,8 +368,8 @@ static void FindInterval( ChewingData *pgdata, TreeDataType *ptd )
 	UsedPhraseMode i_used_phrase;
 	uint16_t new_phoneSeq[ MAX_PHONE_SEQ_LEN ];
 
-	for ( begin = 0; begin < pgdata->nPhoneSeq; begin++ ) {
-		for ( end = begin; end < pgdata->nPhoneSeq; end++ ) {
+	for ( begin = 0; begin < pgdata->chiSymbolBufLen; begin++ ) {
+		for ( end = begin; end < pgdata->chiSymbolBufLen; end++ ) {
 			if ( ! CheckBreakpoint( begin, end + 1, pgdata->bArrBrkpt ) )
 				continue;
 
@@ -969,11 +969,11 @@ int Phrasing( ChewingData *pgdata )
 	InitPhrasing( &treeData );
 
 	FindInterval( pgdata, &treeData );
-	SetInfo( pgdata->nPhoneSeq, &treeData );
+	SetInfo( pgdata->chiSymbolBufLen, &treeData );
 	Discard1( &treeData );
 	Discard2( &treeData );
 	SaveList( &treeData );
-	CountMatchCnnct( &treeData, pgdata->bUserArrCnnct, pgdata->nPhoneSeq );
+	CountMatchCnnct( &treeData, pgdata->bUserArrCnnct, pgdata->chiSymbolBufLen );
 	SortListByScore( &treeData );
 	NextCut( &treeData, &pgdata->phrOut );
 
@@ -988,7 +988,7 @@ int Phrasing( ChewingData *pgdata )
 		( treeData.phList )->arrIndex, 
 		( treeData.phList )->nInter, 
 		pgdata->phoneSeq,
-		pgdata->nPhoneSeq,
+		pgdata->chiSymbolBufLen,
 		pgdata->selectStr, pgdata->selectInterval, pgdata->nSelect, &treeData );
 	SaveDispInterval( &pgdata->phrOut, &treeData );
 

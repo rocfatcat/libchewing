@@ -227,7 +227,6 @@ typedef struct tag_ChewingData {
 
 	uint16_t phoneSeq[ MAX_PHONE_SEQ_LEN ];
 	uint16_t phoneSeqAlt[ MAX_PHONE_SEQ_LEN ];
-	int nPhoneSeq;
 	char selectStr[ MAX_PHONE_SEQ_LEN ][ MAX_PHONE_SEQ_LEN * MAX_UTF8_SIZE + 1 ];
 	IntervalType selectInterval[ MAX_PHONE_SEQ_LEN ];
 	int nSelect;

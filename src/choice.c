@@ -77,7 +77,6 @@ static void SetAvailInfo( ChewingData *pgdata, int begin, int end)
 {
 	AvailInfo *pai = &( pgdata->availInfo );
 	const uint16_t *phoneSeq = pgdata->phoneSeq;
-	int nPhoneSeq = pgdata->nPhoneSeq;
 	const int *bSymbolArrBrkpt = pgdata->bSymbolArrBrkpt;
 
 	int pho_id;
@@ -105,7 +104,7 @@ static void SetAvailInfo( ChewingData *pgdata, int begin, int end)
 	if ( pgdata->config.bPhraseChoiceRearward ) {
 		tail_tmp = tail = end;
 	} else {
-		for ( i = begin; i < nPhoneSeq; i++ ) {
+		for ( i = begin; i < pgdata->chiSymbolBufLen; i++ ) {
 			if ( bSymbolArrBrkpt[ i ] )
 				break;
 			tail = i;

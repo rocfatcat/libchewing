@@ -542,7 +542,6 @@ static void KillFromLeft( ChewingData *pgdata, int nKill )
 void CleanAllBuf( ChewingData *pgdata )
 {
 	/* 1 */
-	pgdata->nPhoneSeq = 0 ;
 	memset( pgdata->phoneSeq, 0, sizeof( pgdata->phoneSeq ) );
 	/* 2 */
 	pgdata->chiSymbolBufLen = 0;
@@ -682,32 +681,31 @@ int AddChi( uint16_t phone, uint16_t phoneAlt, ChewingData *pgdata )
 		}
 	}
 
+	assert( pgdata->chiSymbolBufLen >= pgdata->chiSymbolCursor );
 	/* shift the Brkpt */
-	assert( pgdata->nPhoneSeq >= cursor );
 	memmove( 
 		&( pgdata->bUserArrBrkpt[ cursor + 2 ] ),
 		&( pgdata->bUserArrBrkpt[ cursor + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursor ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursor ) );
 	memmove(
 		&( pgdata->bUserArrCnnct[ cursor + 2 ] ),
 		&( pgdata->bUserArrCnnct[ cursor + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursor ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursor ) );
 
 	/* add to phoneSeq */
 	memmove(
 		&( pgdata->phoneSeq[ cursor + 1 ] ),
 		&( pgdata->phoneSeq[ cursor ] ) ,
-		sizeof( uint16_t ) * ( pgdata->nPhoneSeq - cursor ) );
+		sizeof( uint16_t ) * ( pgdata->chiSymbolBufLen - cursor ) );
 	pgdata->phoneSeq[ cursor ] = phone;
 	memmove(
 		&( pgdata->phoneSeqAlt[ cursor + 1 ] ),
 		&( pgdata->phoneSeqAlt[ cursor ] ) ,
-		sizeof( uint16_t ) * ( pgdata->nPhoneSeq - cursor ) );
+		sizeof( uint16_t ) * ( pgdata->chiSymbolBufLen - cursor ) );
 	pgdata->phoneSeqAlt[ cursor ] = phoneAlt;
-	pgdata->nPhoneSeq ++;
 
 	/* add to chiSymbolBuf */
-	assert( pgdata->chiSymbolBufLen >= pgdata->chiSymbolCursor );
+
 	memmove(
 		&( pgdata->preeditBuf[ pgdata->chiSymbolCursor + 1 ] ),
 		&( pgdata->preeditBuf[ pgdata->chiSymbolCursor ] ) ,
@@ -790,7 +788,7 @@ int CallPhrasing( ChewingData *pgdata )
 	}
 
 	/* kill select interval */
-	for ( i = 0; i < pgdata->nPhoneSeq; i++ ) {
+	for ( i = 0; i < pgdata->chiSymbolBufLen; i++ ) {
 		if ( pgdata->bArrBrkpt[ i ] ) {
 			ChewingKillSelectIntervalAcross( i, pgdata );
 		}
@@ -847,12 +845,12 @@ static void MakePreferInterval( ChewingData *pgdata )
 		}
 	}
 	set_no = i + 1;
-	for ( i = 0; i < pgdata->nPhoneSeq; i++ )
+	for ( i = 0; i < pgdata->chiSymbolBufLen; i++ )
 		if ( belong_set[i] == 0 ) 
 			belong_set[ i ] = set_no++;
 
 	/* for each connect point */
-	for ( i = 1; i < pgdata->nPhoneSeq; i++ ) {
+	for ( i = 1; i < pgdata->chiSymbolBufLen; i++ ) {
 		if ( pgdata->bUserArrCnnct[ i ] ) {
 			Union( belong_set[ i - 1 ], belong_set[ i ], parent );
 		}
@@ -861,8 +859,8 @@ static void MakePreferInterval( ChewingData *pgdata )
 	/* generate new intervals */
 	pgdata->nPrefer = 0;
 	i = 0;
-	while ( i < pgdata->nPhoneSeq ) {
-		for ( j = i + 1; j < pgdata->nPhoneSeq; j++ )
+	while ( i < pgdata->chiSymbolBufLen ) {
+		for ( j = i + 1; j < pgdata->chiSymbolBufLen; j++ )
 			if ( ! SameSet( belong_set[ i ], belong_set[ j ], parent ) )
 				break;
 
@@ -1019,8 +1017,7 @@ int CountSymbols( ChewingData *pgdata, int to )
 
 int PhoneSeqCursor( ChewingData *pgdata )
 {
-	int cursor = pgdata->chiSymbolCursor - CountSymbols( pgdata, pgdata->chiSymbolCursor );
-	return cursor > 0 ? cursor : 0;
+	return pgdata->chiSymbolBufLen;
 }
 
 int ChewingIsChiAt( int chiSymbolCursor, ChewingData *pgdata )
@@ -1064,15 +1061,15 @@ static int KillCharInSelectIntervalAndBrkpt( ChewingData *pgdata, int cursorToKi
 			pgdata->selectInterval[ i ].to--; 
 		} 
 	}
-	assert ( pgdata->nPhoneSeq >= cursorToKill );
+	assert ( pgdata->chiSymbolBufLen >= cursorToKill );
 	memmove( 
 		&( pgdata->bUserArrBrkpt[ cursorToKill ] ),
 		&( pgdata->bUserArrBrkpt[ cursorToKill + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursorToKill ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursorToKill ) );
 	memmove( 
 		&( pgdata->bUserArrCnnct[ cursorToKill ] ),
 		&( pgdata->bUserArrCnnct[ cursorToKill + 1 ] ),
-		sizeof( int ) * ( pgdata->nPhoneSeq - cursorToKill ) );
+		sizeof( int ) * ( pgdata->chiSymbolBufLen - cursorToKill ) );
 
 	return 0;
 }
@@ -1089,12 +1086,12 @@ int ChewingKillChar(
 	pgdata->chiSymbolCursor = tmp;
 	if ( ChewingIsChiAt( chiSymbolCursorToKill, pgdata ) ) {
 		KillCharInSelectIntervalAndBrkpt(pgdata, cursorToKill);
-		assert( pgdata->nPhoneSeq - cursorToKill - 1 >= 0 );
+		assert( pgdata->chiSymbolBufLen - cursorToKill - 1 >= 0 );
 		memmove(
 			&( pgdata->phoneSeq[ cursorToKill ] ), 
 			&(pgdata->phoneSeq[ cursorToKill + 1 ] ),
-			(pgdata->nPhoneSeq - cursorToKill - 1) * sizeof( uint16_t ) );
-		pgdata->nPhoneSeq--;
+			(pgdata->chiSymbolBufLen - cursorToKill - 1) * sizeof( uint16_t ) );
+		pgdata->chiSymbolBufLen--;
 	}
 	pgdata->symbolKeyBuf[ chiSymbolCursorToKill ] = 0;
 	assert( pgdata->chiSymbolBufLen - chiSymbolCursorToKill );

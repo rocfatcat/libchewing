@@ -288,7 +288,6 @@ CHEWING_API int chewing_Reset( ChewingContext *ctx )
 
 	pgdata->chiSymbolCursor = 0;
 	pgdata->chiSymbolBufLen = 0;
-	pgdata->nPhoneSeq = 0;
 	memset( pgdata->bUserArrCnnct, 0, sizeof( int ) * ( MAX_PHONE_SEQ_LEN + 1 ) );
 	memset( pgdata->bUserArrBrkpt, 0, sizeof( int ) * ( MAX_PHONE_SEQ_LEN + 1 ) );
 	pgdata->bChiSym = CHINESE_MODE;
@@ -1311,7 +1310,7 @@ CHEWING_API int chewing_handle_CtrlNum( ChewingContext *ctx, int key )
 	if ( ! pgdata->config.bAddPhraseForward ) {
 		if ( 
 			newPhraseLen >= 1 && 
-			cursor + newPhraseLen - 1 <= pgdata->nPhoneSeq ) {
+			cursor + newPhraseLen - 1 <= pgdata->chiSymbolBufLen ) {
 			if ( NoSymbolBetween( 
 				pgdata,
 				cursor,
@@ -1459,13 +1458,25 @@ CHEWING_API int chewing_handle_Numlock( ChewingContext *ctx, int key )
 CHEWING_API unsigned short *chewing_get_phoneSeq( ChewingContext *ctx )
 {
 	uint16_t *seq;
-	seq = ALC( uint16_t, ctx->data->nPhoneSeq );
-	if ( seq )
-		memcpy( seq, ctx->data->phoneSeq, sizeof(uint16_t)*ctx->data->nPhoneSeq );
+	int i;
+	int j;
+	ChewingData *pgdata;
+
+	pgdata = ctx->data;
+
+	seq = ALC( uint16_t, pgdata->chiSymbolBufLen );
+	if ( seq ) {
+		for ( i = 0, j = 0; i < pgdata->chiSymbolBufLen; ++i ) {
+			if ( ChewingIsChiAt( i, pgdata ) ) {
+				seq[ j ] = pgdata->phoneSeq[ i ];
+				++j;
+			}
+		}
+	}
 	return seq;
 }
 
 CHEWING_API int chewing_get_phoneSeqLen( ChewingContext *ctx )
 {
-	return ctx->data->nPhoneSeq;
+	return ctx->data->chiSymbolBufLen - CountSymbols( ctx->data, ctx->data->chiSymbolBufLen );
 }
