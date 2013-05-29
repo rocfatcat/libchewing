@@ -18,6 +18,9 @@
 #include "global-private.h"
 #include "key2pho-private.h"
 #include "zuin-private.h"
+#ifdef USE_BINARY_DATA
+#include "fqtree.h"
+#endif
 
 #define CHARDEF_BEGIN		"%chardef  begin"
 #define CHARDEF_END		"%chardef  end"
@@ -27,6 +30,7 @@
 #define MAX_PHRASE_BUF_LEN	(149)
 #define MAX_FILE_NAME		(256)
 #define MAX_PHRASE_DATA		(420000)
+#define MAX_FQTREE_NODE		(40000)
 #define PHONEID_FILE		"phoneid.dic"
 
 const char USAGE[] =
@@ -62,6 +66,13 @@ int num_word_data = 0;
 struct PhraseData phrase_data[MAX_PHRASE_DATA];
 int num_phrase_data = 0;
 
+#ifdef USE_BINARY_DATA
+struct FQTreeNode fqtree_node [MAX_FQTREE_NODE];
+int num_fq_tree_node = 0;
+
+struct FQTree fqtree []
+#endif
+
 const struct PhraseData EXCEPTION_PHRASE[] = {
 	{ "\xE5\xA5\xBD\xE8\x90\x8A\xE5\xA1\xA2" /* 好萊塢 */ , 0, { 5691, 4138, 256 } /* ㄏㄠˇ ㄌㄞˊ ㄨ */ },
 	{ "\xE6\x88\x90\xE6\x97\xA5\xE5\xAE\xB6" /* 成日家 */ , 0, { 8290, 9220, 6281 } /* ㄔㄥˊ ㄖˋ ㄐㄧㄚ˙ */ },
@@ -85,6 +96,13 @@ const struct WordData EXCEPTION_WORD[] = {
 	{ 0, 521 /* ㄅㄚ˙ */ , "\xE5\xB7\xB4" /* 巴 */ },
 	{ 0, 5905 /* ㄏㄨㄛ˙ */ , "\xE4\xBC\x99" /* 伙 */ },
 };
+
+#ifdef USE_BINARY_DATA
+void init_fqtree()
+{
+
+}
+#endif
 
 void strip(char *line)
 {
