@@ -20,16 +20,16 @@
 
 #include "chewing-private.h"
 
-#define FQTREE_PHRASE_LEN (6)
+#define MAX_FQTREE_PHRASE_LEN (6)
 
 struct FQTreeNode {
 	enum { INTERNAL_NODE, LEAF_NODE } type;
 	union {
 		struct {
-			uint32_t children[FQTREE_PHRASE_LEN * ZUIN_SIZE + 1];
+			uint32_t children[MAX_FQTREE_PHRASE_LEN * ZUIN_SIZE + 1];
 		} internal;
 		struct {
-			uint32_t phrase_index[FQTREE_PHRASE_LEN * ZUIN_SIZE + 1];
+			uint32_t phrase_index[MAX_FQTREE_PHRASE_LEN * ZUIN_SIZE + 1];
 		} leaf;
 	};
 };
@@ -41,5 +41,5 @@ struct FQTree {
 };
 
 struct FQForest {
-	struct FQTree *fqtree[FQTREE_PHRASE_LEN];
+	struct FQTree *fqtree[MAX_FQTREE_PHRASE_LEN];
 };
